@@ -49,7 +49,20 @@ const aiProjectSummaryPrompt = ai.definePrompt({
       summary: z.string().describe('A summary of the project progress, key risks, and next steps.'),
     }),
   },
-  prompt: `You are an AI Project Assistant, and will produce a summary of the project progress, key risks, and next steps, from this information:\n\nProject ID: {{{projectId}}}\nUser ID: {{{userId}}}\nTasks: {{{tasks}}}\nEmails: {{{emails}}}\nDocuments: {{{documents}}}\nCalendar Events: {{{calendarEvents}}}`,
+  prompt: `You are an AI Project Assistant, and will produce a summary of the project progress, key risks, and next steps, from this information:
+
+Project ID: {{{projectId}}}
+User ID: {{{userId}}}
+Tasks: {{{tasks}}}
+Emails: {{{emails}}}
+Documents: {{{documents}}}
+Calendar Events: {{{calendarEvents}}}
+
+Analyze the provided data and generate a concise summary (approximately 150-200 words) that covers the following:
+
+1.  Project Progress: Briefly describe the current status of the project, highlighting completed tasks and ongoing activities.
+2.  Key Risks: Identify any potential risks or challenges that could impact the project timeline or success.
+3.  Next Steps: Outline the immediate actions and priorities required to keep the project on track.`,
 });
 
 const aiProjectSummaryFlow = ai.defineFlow<
