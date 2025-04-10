@@ -34,6 +34,26 @@ export default async function Home() {
 
   return (
     <div className="flex h-screen bg-background">
+      <aside className="w-64 bg-secondary border-r p-4">
+        <ul>
+          <li>
+            <a href="#" className="block py-2 hover:bg-accent rounded-md p-2">
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="#" className="block py-2 hover:bg-accent rounded-md p-2">
+              Projects
+            </a>
+          </li>
+          <li>
+            <a href="#" className="block py-2 hover:bg-accent rounded-md p-2">
+              Tasks
+            </a>
+          </li>
+          {/* Add more navigation items here */}
+        </ul>
+      </aside>
       <main className="flex-1 p-4">
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 
