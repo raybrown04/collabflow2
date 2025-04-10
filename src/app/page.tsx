@@ -12,7 +12,6 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
 } from '@/components/ui/sidebar';
 import {Icons} from '@/components/icons';
@@ -53,36 +52,26 @@ export default async function Home() {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="#" >
-                <Icons.home className="mr-2 h-4 w-4" />
-                <span>Dashboard</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="#">
-                <Icons.workflow className="mr-2 h-4 w-4" />
-                <span>Projects</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="#">
-                <Icons.calendar className="mr-2 h-4 w-4" />
-                <span>Calendar</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="#">
-                <Icons.messageSquare className="mr-2 h-4 w-4" />
-                <span>Tasks</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="#">
-                <Icons.file className="mr-2 h-4 w-4" />
-                <span>Documents</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <SidebarMenuButton href="#" >
+              <Icons.home className="mr-2 h-4 w-4" />
+              <span>Dashboard</span>
+            </SidebarMenuButton>
+            <SidebarMenuButton href="#">
+              <Icons.workflow className="mr-2 h-4 w-4" />
+              <span>Projects</span>
+            </SidebarMenuButton>
+            <SidebarMenuButton href="#">
+              <Icons.calendar className="mr-2 h-4 w-4" />
+              <span>Calendar</span>
+            </SidebarMenuButton>
+            <SidebarMenuButton href="#">
+              <Icons.messageSquare className="mr-2 h-4 w-4" />
+              <span>Tasks</span>
+            </SidebarMenuButton>
+            <SidebarMenuButton href="#">
+              <Icons.file className="mr-2 h-4 w-4" />
+              <span>Documents</span>
+            </SidebarMenuButton>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
