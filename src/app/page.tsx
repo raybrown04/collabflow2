@@ -12,7 +12,6 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarProvider,
 } from '@/components/ui/sidebar';
 import {Icons} from '@/components/icons';
 
