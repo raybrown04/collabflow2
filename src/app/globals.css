@@ -20,7 +20,7 @@ body {
     --secondary-foreground: 220 14.3% 46.9%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 220 14.3% 46.9%;
-    --accent: 220 20% 80%; /* Light Blue */
+    --accent: 220 20% 80%; /* Light Grey */
     --accent-foreground: 220 14.3% 46.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -43,7 +43,7 @@ body {
     --sidebar-ring: 220 66.7% 20%;
   }
   .dark {
-    --background: 220 14.3% 46.9%; /* Dark Grey */
+    --background: 220 14.3% 70%; /* Dark Grey */
     --foreground: 0 0% 98%; /* Light text color */
     --card: 220 14.3% 46.9%;
     --card-foreground: 0 0% 98%;
@@ -55,7 +55,7 @@ body {
     --secondary-foreground: 0 0% 98%;
     --muted: 220 14.3% 46.9%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 220 20% 60%; /* Dark Blue */
+    --accent: 220 20% 60%; /* Light Grey */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
