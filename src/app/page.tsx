@@ -3,6 +3,19 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {aiQuickSearch} from '@/ai/flows/ai-quick-search';
 import {aiProjectSummary} from '@/ai/flows/ai-project-assistant';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from '@/components/ui/sidebar';
+import {Icons} from '@/components/icons';
 
 async function getQuickSearchResults(userId: string, query: string) {
   try {
@@ -34,26 +47,48 @@ export default async function Home() {
 
   return (
     <div className="flex h-screen bg-background">
-      <aside className="w-64 bg-secondary border-r p-4">
-        <ul>
-          <li>
-            <a href="#" className="block py-2 hover:bg-accent rounded-md p-2">
-              Dashboard
-            </a>
-          </li>
-          <li>
-            <a href="#" className="block py-2 hover:bg-accent rounded-md p-2">
-              Projects
-            </a>
-          </li>
-          <li>
-            <a href="#" className="block py-2 hover:bg-accent rounded-md p-2">
-              Tasks
-            </a>
-          </li>
-          {/* Add more navigation items here */}
-        </ul>
-      </aside>
+      <Sidebar>
+        <SidebarHeader>
+          <h2>CollabFlow</h2>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#" >
+                <Icons.home className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#">
+                <Icons.workflow className="mr-2 h-4 w-4" />
+                <span>Projects</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#">
+                <Icons.calendar className="mr-2 h-4 w-4" />
+                <span>Calendar</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#">
+                <Icons.messageSquare className="mr-2 h-4 w-4" />
+                <span>Tasks</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#">
+                <Icons.file className="mr-2 h-4 w-4" />
+                <span>Documents</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+          <div>Footer</div>
+        </SidebarFooter>
+      </Sidebar>
       <main className="flex-1 p-4">
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 
@@ -119,4 +154,3 @@ export default async function Home() {
     </div>
   );
 }
-
