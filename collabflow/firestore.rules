@@ -1,0 +1,203 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // === Helper Functions ===
+    function getUserData(userId) {
+      // Returns user data or null if user doesn't exist
+      let userDoc = get(/databases/$(database)/documents/users/$(userId));
+      return userDoc.exists ? userDoc.data : null;
+    }
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isAuthUser(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    function getUserRole(userId) {
+        let userData = getUserData(userId);
+        return userData != null ? userData.role : null;
+    }
+
+    function isAdministrator(userId) {
+      // Checks if the *provided* userId has the Administrator role.
+      // Use request.auth.uid for checking the *requesting* user.
+      return isAuth() && getUserRole(userId) == 'Administrator';
+    }
+
+    // Checks if the *requesting* user is an Administrator
+    function isRequestingUserAdmin() {
+        return isAdministrator(request.auth.uid);
+    }
+
+    // Checks if a user is a member of a specific project based on the project's `members` list.
+    // This is the primary check for project access.
+    function isProjectMember(projectId, userId) {
+       let projectDoc = get(/databases/$(database)/documents/projects/$(projectId));
+       // Check if project exists, has members array, and userId is in it
+       return projectDoc.exists &&
+              ('members' in projectDoc.data) &&
+              projectDoc.data.members is list && // Ensure it's a list
+              userId in projectDoc.data.members;
+    }
+
+    // === Collection Rules ===
+
+    // --- Users Collection --- (/users/{userId})
+    match /users/{userId} {
+      // Allow create: Handled implicitly by invite verification function.
+      // If direct creation needed (e.g., admin panel), ensure only Admins can create other Admins.
+      allow create: if isRequestingUserAdmin() ||
+                       (isAuth() && request.resource.data.role == 'User'); // Allow self-creation as User? Risky without invite.
+                       // Better to rely *only* on invite function for secure role assignment.
+                       // Tightening: allow create: if false; (Force creation via function)
+
+      // Allow read by the user themselves or any Administrator
+      allow read: if isAuthUser(userId) || isRequestingUserAdmin();
+
+      // Allow update by the user themselves (only non-critical fields)
+      // Or allow full update by an Administrator (except for createdAt)
+      allow update: if (isAuthUser(userId)
+                      && request.resource.data.keys().hasOnly(['displayName', 'photoURL', 'onboarded']) // Only allow updating these fields
+                      // Explicitly prevent changing sensitive fields by self
+                      && request.resource.data.email == resource.data.email
+                      && request.resource.data.role == resource.data.role
+                      && request.resource.data.assignedProjects == resource.data.assignedProjects
+                      && request.resource.data.createdAt == resource.data.createdAt
+                    )
+                    || (isRequestingUserAdmin()
+                        && request.resource.data.createdAt == resource.data.createdAt // Admin cannot change createdAt
+                       );
+
+      // Allow delete only by an Administrator (and not self-delete? Add && request.auth.uid != userId)
+      allow delete: if isRequestingUserAdmin();
+
+      // Note: The `assignedProjects` field on the user document is primarily for optimizing
+      // frontend queries (showing "My Projects"). Access control should rely on the
+      // `members` field within the `/projects/{projectId}` document as the source of truth.
+      // A Cloud Function trigger should keep `assignedProjects` synchronized with `members`.
+    }
+
+    // --- Invites Collection --- (/invites/{inviteId})
+    match /invites/{inviteId} {
+      // Create/Update/Read handled by secure Cloud Function (createInvite, verifyAndAcceptInvite).
+      // No direct client access allowed.
+      allow read, write: if false;
+    }
+
+    // --- Projects Collection --- (/projects/{projectId})
+    match /projects/{projectId} {
+      // Allow create ONLY by Administrators.
+      // - Ensure required fields are present and valid.
+      // - Ensure creator is an admin and is included in the members list.
+      allow create: if isRequestingUserAdmin()
+                    && request.resource.data.keys().hasAll(['projectId', 'name', 'members', 'createdBy', 'createdAt', 'updatedAt']) // Check required fields
+                    && request.resource.data.projectId == projectId // Ensure field matches doc ID
+                    && request.resource.data.name is string && request.resource.data.name.size() > 0
+                    && request.resource.data.members is list && request.resource.data.members.size() > 0
+                    && request.auth.uid in request.resource.data.members // Creator must be a member
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.createdAt == request.time // Use server timestamp
+                    && request.resource.data.updatedAt == request.time; // Use server timestamp
+
+      // Allow read ONLY by:
+      // 1. Administrators
+      // 2. Users who are listed in the project's `members` array.
+      allow read: if isAuth() &&
+                   (isRequestingUserAdmin() || isProjectMember(projectId, request.auth.uid));
+
+      // Allow update ONLY by Administrators.
+      // - Prevent changing immutable fields (projectId, createdBy, createdAt).
+      // - Ensure members list remains valid.
+      // - Automatically update `updatedAt` timestamp.
+      allow update: if isRequestingUserAdmin()
+                    && request.resource.data.projectId == resource.data.projectId
+                    && request.resource.data.createdBy == resource.data.createdBy
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.members is list // Ensure members is still a list
+                    && request.resource.data.name is string && request.resource.data.name.size() > 0
+                    && request.resource.data.updatedAt == request.time; // Enforce update timestamp
+
+      // Allow delete ONLY by Administrators
+      allow delete: if isRequestingUserAdmin();
+
+      // --- Subcollections (Rules for tasks, etc., *nested* under projects) ---
+      // Example: match /tasks/{taskId} { ... rules ... }
+      // Rules here automatically inherit the project access context.
+      // For example, checking isProjectMember(projectId, request.auth.uid) might suffice.
+    }
+
+    // --- Rules for Top-Level Collections Referencing Projects --- //
+    // These rules apply if tasks, documents, etc., are in top-level collections
+    // and link to projects via a `projectId` field.
+
+    // Example: Tasks collection linked via projectId field
+    match /tasks/{taskId} {
+      // Helper to get the projectId from the task document (on read/update/delete)
+      function getTaskProjectId() { return resource.data.projectId; }
+      // Helper to get the projectId from the incoming task data (on create)
+      function getIncomingTaskProjectId() { return request.resource.data.projectId; }
+
+      // Allow create IF the user is an Admin OR a member of the project being linked to.
+      allow create: if isAuth() &&
+                     (isRequestingUserAdmin() || isProjectMember(getIncomingTaskProjectId(), request.auth.uid))
+                     // Add validation for required task fields
+                     && request.resource.data.createdBy == request.auth.uid
+                     && request.resource.data.createdAt == request.time;
+
+      // Allow read IF the user is an Admin OR a member of the linked project.
+      allow read: if isAuth() &&
+                   (isRequestingUserAdmin() || isProjectMember(getTaskProjectId(), request.auth.uid));
+
+      // Allow update IF the user is an Admin OR a member of the linked project.
+      // TODO: Refine - e.g., only assignee or creator can update certain fields?
+      allow update: if isAuth() &&
+                     (isRequestingUserAdmin() || isProjectMember(getTaskProjectId(), request.auth.uid))
+                     // Prevent changing projectId or creator
+                     && request.resource.data.projectId == resource.data.projectId
+                     && request.resource.data.createdBy == resource.data.createdBy
+                     && request.resource.data.createdAt == resource.data.createdAt;
+
+      // Allow delete IF the user is an Admin OR a member of the linked project (or maybe just creator/admin).
+      allow delete: if isAuth() &&
+                     (isRequestingUserAdmin() || isProjectMember(getTaskProjectId(), request.auth.uid));
+    }
+
+    // Add similar rules for documentMetadata, emailMetadata, etc.
+    match /documentMetadata/{docId} {
+        function getDocProjectId() { return resource.data.projectId; }
+        function getIncomingDocProjectId() { return request.resource.data.projectId; }
+
+        allow create: if isAuth() && (isRequestingUserAdmin() || isProjectMember(getIncomingDocProjectId(), request.auth.uid))
+                     && request.resource.data.linkedBy == request.auth.uid
+                     && request.resource.data.linkedAt == request.time;
+        allow read: if isAuth() && (isRequestingUserAdmin() || isProjectMember(getDocProjectId(), request.auth.uid));
+        // Only allow update/delete by creator or Admin?
+        allow update: if isAuth() && (isRequestingUserAdmin() || resource.data.linkedBy == request.auth.uid)
+                     && request.resource.data.projectId == resource.data.projectId
+                     && request.resource.data.linkedBy == resource.data.linkedBy
+                     && request.resource.data.linkedAt == resource.data.linkedAt;
+        allow delete: if isAuth() && (isRequestingUserAdmin() || resource.data.linkedBy == request.auth.uid);
+    }
+
+     match /emailMetadata/{emailId} {
+         function getEmailProjectId() { return resource.data.projectId; }
+         function getIncomingEmailProjectId() { return request.resource.data.projectId; }
+
+         allow create: if isAuth() && (isRequestingUserAdmin() || isProjectMember(getIncomingEmailProjectId(), request.auth.uid))
+                      && request.resource.data.linkedBy == request.auth.uid
+                      && request.resource.data.linkedAt == request.time;
+         allow read: if isAuth() && (isRequestingUserAdmin() || isProjectMember(getEmailProjectId(), request.auth.uid));
+        // Only allow update/delete by creator or Admin?
+         allow update: if isAuth() && (isRequestingUserAdmin() || resource.data.linkedBy == request.auth.uid)
+                      && request.resource.data.projectId == resource.data.projectId
+                      && request.resource.data.linkedBy == resource.data.linkedBy
+                      && request.resource.data.linkedAt == resource.data.linkedAt;
+         allow delete: if isAuth() && (isRequestingUserAdmin() || resource.data.linkedBy == request.auth.uid);
+    }
+  }
+}

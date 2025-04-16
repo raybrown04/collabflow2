@@ -1,0 +1,17 @@
+{
+  "name": "collabflow-functions",
+  "description": "Cloud Functions for CollabFlow",
+  "main": "index.js", // Assuming you might have an index.js later
+  "engines": {
+    "node": "18" // Specify your desired Node.js version (e.g., 16, 18, 20)
+  },
+  "dependencies": {
+    "firebase-admin": "^11.11.1", // Use a recent version
+    "firebase-functions": "^4.7.0", // Use a recent version
+    "uuid": "^9.0.1" // Added UUID
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
